@@ -29,7 +29,14 @@ RRRRRRR
 RRRRRRR
 YRRYRRR
 """
-
+won_board_by_red = """
+OOOOOOO
+OOOOOOO
+OOYOROY
+OYRRRYY
+RYRYYYR
+YRRYYRR
+"""
 detection_kernels = [
     np.array([[1, 1, 1, 1]]),  # Horizontal kernel
     np.array([[1], [1], [1], [1]]),  # Vertical kernel
