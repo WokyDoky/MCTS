@@ -8,6 +8,8 @@ In that context MCTS is used to solve the game tree.
 
 Developing AI agents to	play the game of Connect Four. 
 
+![Connect Four|300](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxhoCAObjHdI6h8-lhRmsYP6KRlPDBFhoMHg&s)
+
 > Board: 7 x 6. 
 
 ### Part 1
@@ -30,7 +32,7 @@ R
 
 1. Algorithm 1: Uniform Random (UR)
    - Choose a random legal move. 
-3. Algorithm 2: Pure Monte Carlo Game Search (PMCGS)
+3. Algorithm 2: Pure Monte Carlo Game Search ([PMCGS](https://www.youtube.com/watch?v=UXW2yZndl7U&ab_channel=JohnLevine))
    - For each position, all feasible moves are determined: k random games are played out to the very end, and the scores are recorded. The move leading to the best score is chosen. Ties are broken by fair coin flips.
 5. Algorithm 3: Upper Confidence bound for Trees (UCT)	
    - The final algorithm builds on PMCGS and uses most of the same structure. The only difference is in how nodes are selected within the existing search tree; instead of selecting randomly the nodes are selected using the Upper Confidence Bounds (UCB) algorithm.

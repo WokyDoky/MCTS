@@ -25,8 +25,14 @@ def board_init(string_board):
     return board
 
 def print_board(board):
+    print(end='  ')
+    for i in range(COLUMNS): print(i, end=' ')
+    print()
+    i = 0
     for row in board:
+        print(i, end=' ')
         print(" ".join(row))
+        i += 1
     print("\n")
 
 
