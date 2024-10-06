@@ -1,5 +1,6 @@
 # This file will be deleted later.
 # Only for ease of use.
+import numpy as np
 
 RED_PLAYER = 'R'
 YELLOW_PLAYER = 'Y'
@@ -19,6 +20,22 @@ OOROOOY
 OYRYOYR
 YRRYORR
 """
+
+full_board_string = """
+RRRRRRR
+YYYYYYY
+RRRRRRR
+RRRRRRR
+RRRRRRR
+YRRYRRR
+"""
+
+detection_kernels = [
+    np.array([[1, 1, 1, 1]]),  # Horizontal kernel
+    np.array([[1], [1], [1], [1]]),  # Vertical kernel
+    np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]),  # Diagonal (left-to-right)
+    np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, 0]])   # Diagonal (right-to-left)
+]
 def board_init(string_board):
     rows = string_board.strip().split("\n")
     board = [list(row) for row in rows]

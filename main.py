@@ -1,6 +1,11 @@
 import random
+import numpy as np
+from scipy.signal import convolve2d
+
 import utilities
-from utilities import board_init, print_board, OPEN_SPACE
+from utilities import board_init, print_board, OPEN_SPACE, RED_PLAYER, full_board_string, detection_kernels, \
+    YELLOW_PLAYER
+
 
 class Node:
     def __init__(self, board, parent=None):
@@ -43,7 +48,7 @@ def simulate_move(board, move):
     new_board = [row[:] for row in board]  # Create a deep copy of the board
     for row in range(len(board)-1, -1, -1):
         if new_board[row][move] == OPEN_SPACE:
-            new_board[row][move] = "X"  # Assuming 'X' is the current player
+            new_board[row][move] = RED_PLAYER  # Player. Will have to change.
             break
     return new_board
 
@@ -51,19 +56,33 @@ def simulate_random_game(node):
     """Simulates a random game from the given node."""
     current_board = node.board
     while not is_terminal(current_board):
-        move = random.choice([col for col in range(len(current_board[0])) if current_board[0][col] == OPEN_SPACE])
-        current_board = simulate_move(current_board, move)
+        move = alg1(current_board)
+    current_board = simulate_move(current_board, move)
     return get_game_result(current_board)
 
 def is_terminal(board):
     """Checks if the game has ended (win/draw)."""
-    # Implement logic to check if the board has a winning state or if it's a draw
-    return False  # Placeholder, should return True if game over
+    if board_is_full(board): return True
+
+    board_array = np.array(board)
+    # Check for each kernel
+    for kernel in detection_kernels:
+        if (convolve2d(board_array == RED_PLAYER, kernel, mode="valid") == 4).any():
+            return True
+    for kernel in detection_kernels:
+        if (convolve2d(board_array == YELLOW_PLAYER, kernel, mode="valid") == 4).any():
+            return True
+
+    return False
 
 def get_game_result(board):
     """Returns +1 if 'X' wins, -1 if 'O' wins, and 0 for draw."""
-    # Implement logic to evaluate the final board state
-    return 0  # Placeholder
+    if board_is_full(board): return 0
+    board_array = np.array(board)
+    for kernel in detection_kernels:
+        if (convolve2d(board_array == RED_PLAYER, kernel, mode="valid") == 4).any():
+            return 1
+    return -1
 
 def backpropagate(node, result):
     """Propagates the result of a simulation back through the tree."""
@@ -72,9 +91,13 @@ def backpropagate(node, result):
         result = -result  # Alternate the result for the opponent's perspective
         node = node.parent
 
+
+def board_is_full(board):
+    return not (OPEN_SPACE in (item for sublist in board for item in sublist))
+
 def alg1(board):
-    move = random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
-    print(move)
+    if board_is_full(board): return -1
+    return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
 
 def alg2(board):
     # Initialize root node
@@ -107,9 +130,12 @@ def main():
     print("!Hola!")
 
     board = board_init(utilities.example_board_string)
+    other_board = full_board_string
     print_board(board)
 
     alg2(board)
+    print(alg2(board))
+    print(alg1(other_board))
 
 
 if __name__ == "__main__":
