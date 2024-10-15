@@ -1,115 +1,210 @@
 import random
+import math
+from copyreg import constructor
+from dataclasses import dataclass
 
 import numpy as np
+import time
 from matplotlib import pyplot as plt
+from collections import defaultdict
 from scipy.signal import convolve2d
+from copy import deepcopy
 
 import utilities
 from utilities import board_init, print_board, OPEN_SPACE, RED_PLAYER, full_board_string, detection_kernels, \
     YELLOW_PLAYER, won_board_by_red, board_is_full, did_player_win, test_board_yellow, print_pretty_board, deep_copy, \
     print_pretty_board, place_a_piece, example_board_string, COLUMNS, ROWS, about_to_win_for_red
 
-
-class MonteCarloNode:
-    def __init__(self, board, move=None, parent=None):
+@dataclass
+class ConnectState:
+    def __init__(self, board, player, other_player):
+        """
+        Class holds the state of the current board.
+        Args:
+            board: 2d array
+            player: Character "Y" or "R"
+            other_player: Character "Y" or "R"
+        """
         self.board = board
-        self.move = move
-        self.parent = parent
-        self.children = []
-        self.wi = 0  # Total value of this node
-        self.ni = 0  # Total visits to this node
-        self.untried_moves = self.get_legal_moves()
+        self.player = player
+        self.other_player = other_player
+        self.last_played = []
+
+    @staticmethod
+    def default_board():
+        """Generate the default empty board for a new game."""
+        return [[OPEN_SPACE for _ in range(COLUMNS)] for _ in range(ROWS)]
+
+    def move(self, col):
+        for row in range(len(self.board) - 1, -1, -1):
+            if self.board[row][col] == OPEN_SPACE:
+                self.board[row][col] = self.player
+                temp = self.player
+                self.player = self.other_player
+                self.other_player = temp
+
+                break
 
     def get_legal_moves(self):
         """Return a list of columns with open spaces."""
         return [col for col in range(COLUMNS) if self.board[0][col] == OPEN_SPACE]
 
-    def add_child(self, move, board_copy):
-        child_node = MonteCarloNode(board_copy, move, self)
-        self.children.append(child_node)
-        self.untried_moves.remove(move)
-        return child_node
+    #Return 1 for wins, -1 for lose and 0 for draw.
+    def check_win(self):
+        board_array = np.array(self.board)
+        for kernel in detection_kernels:
+            if (convolve2d(board_array == self.player, kernel, mode="valid") == 4).any():
+                return 1
+            if (convolve2d(board_array == YELLOW_PLAYER, kernel, mode="valid") == 4).any():
+                return -1
+        if board_is_full(self.board):
+            return 0
+        return None
 
-    def is_fully_expanded(self):
-        return len(self.untried_moves) == 0
+    #Returns None for games not over
+        #Problematic.
+    def game_over(self):
+        return len(self.get_legal_moves()) == 0 or self.check_win()
 
-    def update(self, value):
-        self.ni += 1
-        self.wi += value
+    def print(self):
+        print_pretty_board(self.board)
 
+class Node:
+    def __init__(self, move, parent):
+        self.move = move
+        self.parent = parent
+        self.N = 0
+        self.Q = 0
+        self.children = {}
+        self.outcome = None
 
-def pmcgs(board, player, num_simulations, verbose=False):
-    root = MonteCarloNode(board)
-    for _ in range(num_simulations):
-        node = root
-        current_board = deep_copy(board)
+    def add_children(self, children: dict) -> None:
+        for child in children:
+            self.children[child.move] = child
+    #https://en.wikipedia.org/wiki/Monte_Carlo_tree_search#:~:text=c%20is%20the%20exploration%20parameter,in%20practice%20usually%20chosen%20empirically
+    def value(self, explore: float = math.sqrt(2)):
+        if self.N == 0:
+            return 0 if explore == 0 else float('inf')
+        else:
+            return self.Q / self.N + explore * math.sqrt(math.log(self.parent.N) / self.N)
 
-        # Selection: traverse the tree until reaching a node with untried moves or no children
-        while node.is_fully_expanded() and node.children:
-            node = random.choice(node.children)
-            place_a_piece(current_board, node.move, player)
-            player = RED_PLAYER if player == YELLOW_PLAYER else YELLOW_PLAYER
+class MCTS:
+    def __init__(self, state=None, board=None, player=RED_PLAYER, other_player=YELLOW_PLAYER):
+        """
+        Initialize MCTS with a state, or create a new state with the given board and players.
+        Args:
+            state (ConnectState): An optional game state to start from.
+            board (2D array): An optional custom board. If not provided, the default board will be used.
+            player (str): The player who starts, defaults to RED_PLAYER.
+            other_player (str): The other player, defaults to YELLOW_PLAYER.
+        """
+        if state is None:
+            if board is None:
+                # If no board is provided, generate a default board
+                board = ConnectState.default_board()
+            state = ConnectState(board, player, other_player)
+        self.root_state = deepcopy(state)
+        self.root = Node(None, None)
+        self.run_time = 0
+        self.node_count = 0
+        self.num_rollouts = 0
 
-        # Expansion: if there are untried moves, expand the node
-        if not node.is_fully_expanded():
-            move = random.choice(node.untried_moves)
-            board_copy = deep_copy(current_board)
-            place_a_piece(board_copy, move, player)
-            node = node.add_child(move, board_copy)
-            if verbose: print(f"NODE ADDED with move {move}")
+    def select_node(self) -> tuple:
+        node = self.root
+        state = deepcopy(self.root_state)
 
-        # Simulation: play out a random game from the current state
-        rollout_board = deep_copy(current_board)
-        current_player = player
-        # >>> Replace the existing simulation code with the following part <<<
-        while not board_is_full(rollout_board) and not did_player_win(rollout_board, RED_PLAYER) and not did_player_win(
-                rollout_board, YELLOW_PLAYER):
-            available_moves = [col for col in range(COLUMNS) if rollout_board[0][col] == OPEN_SPACE]
-            if not available_moves:
-                break
-            move = random.choice(available_moves)
-            place_a_piece(rollout_board, move, current_player)
-            current_player = RED_PLAYER if current_player == YELLOW_PLAYER else YELLOW_PLAYER
-            if verbose: print(f"Rollout move: {move}")
+        while len(node.children) != 0:
+            children = node.children.values()
+            max_value = max(children, key=lambda n: n.value()).value()
+            max_nodes = [n for n in children if n.value() == max_value]
 
-        # Check the outcome of the game
-        winner = 0  # Default to draw
-        if did_player_win(rollout_board, RED_PLAYER):
-            winner = 1 if player == RED_PLAYER else -1
-        elif did_player_win(rollout_board, YELLOW_PLAYER):
-            winner = 1 if player == YELLOW_PLAYER else -1
+            node = random.choice(max_nodes)
+            state.move(node.move)
 
-        if verbose: print(f"TERMINAL NODE VALUE: {winner}")
+            if node.N == 0:
+                return node, state
 
-        # Backpropagation: update all nodes with the result
+        if self.expand(node, state):
+            node = random.choice(list(node.children.values()))
+            state.move(node.move)
+
+        return node, state
+
+    def expand(self, parent: Node, state: ConnectState) -> bool:
+        if state.game_over():
+            return False
+
+        children = [Node(move, parent) for move in state.get_legal_moves()]
+        parent.add_children(children)
+
+        return True
+
+    def roll_out(self, state: ConnectState) -> int:
+        while not state.game_over():
+            """
+            TODO: 
+                This should be replaced with alg1 method. 
+            """
+            state.move(random.choice(state.get_legal_moves()))
+
+        return state.check_win()
+
+    def back_propagate(self, node: Node, turn: int, outcome: int) -> None:
+
+        # For the current player, not the next player
+        reward = 0 if outcome == turn else 1
+
         while node is not None:
-            node.update(winner)
-            if verbose: print(f"Updated node values wi={node.wi}, ni={node.ni}")
+            node.N += 1
+            node.Q += reward
             node = node.parent
+            if outcome == 0:
+                reward = 0
+            else:
+                reward = 1 - reward
 
-    # After simulations, select the move with the best average win rate
-    best_move = None
-    best_value = -float('inf')
-    for child in root.children:
-        avg_value = child.wi / child.ni
-        if avg_value > best_value:
-            best_value = avg_value
-            best_move = child.move
-        if verbose:
-            print(f"Move: {child.move}, wi: {child.wi}, ni: {child.ni}, avg: {avg_value}")
-    return best_move
+    def search(self, time_limit: int):
+        start_time = time.process_time()
 
-def alg1(board):
-    if board_is_full(board): return -1
-    return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
+        num_rollouts = 0
+        while time.process_time() - start_time < time_limit:
+            node, state = self.select_node()
+            outcome = self.roll_out(state)
+            self.back_propagate(node, state.player, outcome)
+            num_rollouts += 1
 
+        run_time = time.process_time() - start_time
+        self.run_time = run_time
+        self.num_rollouts = num_rollouts
 
-def run_multiple_simulations(board, num_runs, num_simulations_per_run):
+    def best_move(self):
+        if self.root_state.game_over():
+            return -1
+
+        max_value = max(self.root.children.values(), key=lambda n: n.N).N
+        max_nodes = [n for n in self.root.children.values() if n.N == max_value]
+        best_child = random.choice(max_nodes)
+
+        return best_child.move
+
+    def move(self, move):
+        if move in self.root.children:
+            self.root_state.move(move)
+            self.root = self.root.children[move]
+            return
+
+        self.root_state.move(move)
+        self.root = Node(None, None)
+
+    def statistics(self) -> tuple:
+        return self.num_rollouts, self.run_time
+
+def run_multiple_simulations(board, num_runs):
     move_counts = {}
     player = RED_PLAYER
 
     for _ in range(num_runs):
-        best_move = pmcgs(board, player, num_simulations_per_run, verbose=False)
+        best_move = alg2(board)
         if best_move in move_counts:
             move_counts[best_move] += 1
         else:
@@ -126,18 +221,44 @@ def run_multiple_simulations(board, num_runs, num_simulations_per_run):
     plt.title(f'Frequency of Best Move Selection in {num_runs} Simulations')
     plt.xticks(moves)
     plt.show()
+
+def alg1(board):
+    if board_is_full(board): return -1
+    return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
+
+def alg2(board):
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    mcts = MCTS(state=state)
+
+    state.print()
+
+    print("thinking")
+    mcts.search(8)
+    move = mcts.best_move()
+
+    return move
+def test():
+    board = board_init(example_board_string)
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    mcts = MCTS(state=state)
+
+    state.print()
+
+    print("thinking")
+    mcts.search(8)
+    num_rollouts, run_time = mcts.statistics()
+    print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
+    move = mcts.best_move()
+
+    print("MCTS chose move: ", move)
+
+    state.move(move)
+    mcts.move(move)
+    state.print()
 def main():
     board = board_init(example_board_string)
-    test_board = board_init(about_to_win_for_red)
+    run_multiple_simulations(board, 20)
 
-    """player = RED_PLAYER
-    best_move = pmcgs(board, player, 20, verbose=True)
-    print(f"Best move selected: {best_move}")
-    print_pretty_board(board)
-    place_a_piece(board, best_move, player)
-    print_pretty_board(board)"""
-
-    run_multiple_simulations(test_board, num_runs=100, num_simulations_per_run=2000)
 
 if __name__ == "__main__":
     main()
