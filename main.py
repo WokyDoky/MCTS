@@ -230,22 +230,19 @@ def alg2(board):
     state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
     mcts = MCTS(state=state)
 
-    state.print()
-
     print("thinking")
     mcts.search(8)
     move = mcts.best_move()
 
     return move
-def test():
-    board = board_init(example_board_string)
+def test(board):
     state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
     mcts = MCTS(state=state)
 
     state.print()
 
     print("thinking")
-    mcts.search(8)
+    mcts.search(100)
     num_rollouts, run_time = mcts.statistics()
     print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
     move = mcts.best_move()
@@ -256,8 +253,9 @@ def test():
     mcts.move(move)
     state.print()
 def main():
-    board = board_init(example_board_string)
-    run_multiple_simulations(board, 20)
+    board = board_init(about_to_win_for_red)
+    test(board)
+    #run_multiple_simulations(board, 20)
 
 
 if __name__ == "__main__":

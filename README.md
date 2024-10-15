@@ -4,6 +4,8 @@
 In computer science, Monte Carlo tree search (MCTS) is a heuristic search algorithm for some kinds of decision processes, most notably those employed in software that plays board games. 
 In that context MCTS is used to solve the game tree.
 
+The Monte Carlo Tree Search (MCTS) algorithm finds the best move for a player by simulating multiple game scenarios. Each node in the tree represents a unique game state. For each move, the algorithm plays out random simulations until an outcome (win/loss/draw) is reached. It then backpropagates the results, updating the values of nodes based on the outcomes.
+
 ## Assignment 
 
 Developing AI agents to	play the game of Connect Four. 
