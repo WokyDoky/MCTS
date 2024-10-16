@@ -55,6 +55,14 @@ YYRORYY
 RYRYYYR
 YRRYYRR
 """
+draw = """
+RRRYRRO
+YYYRYYY
+RRRYRRR
+YYYRYYY
+RRRYRRR
+YRYRYYY
+"""
 horizontal_kernel = np.array([[ 1, 1, 1, 1]])
 vertical_kernel = np.transpose(horizontal_kernel)
 diag1_kernel = np.eye(4, dtype=np.uint8)
