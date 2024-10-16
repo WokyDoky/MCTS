@@ -55,7 +55,7 @@ class ConnectState:
         for kernel in detection_kernels:
             if (convolve2d(board_array == self.player, kernel, mode="valid") == 4).any():
                 return 1
-            if (convolve2d(board_array == YELLOW_PLAYER, kernel, mode="valid") == 4).any():
+            if (convolve2d(board_array == self.other_player, kernel, mode="valid") == 4).any():
                 return -1
         if board_is_full(self.board):
             return 0
@@ -242,7 +242,7 @@ def test(board):
     state.print()
 
     print("thinking")
-    mcts.search(100)
+    mcts.search(8)
     num_rollouts, run_time = mcts.statistics()
     print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
     move = mcts.best_move()
@@ -252,10 +252,26 @@ def test(board):
     state.move(move)
     mcts.move(move)
     state.print()
+
+def test2(board, board_won):
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    state2 = ConnectState(board_won, YELLOW_PLAYER, RED_PLAYER)
+    state3 = ConnectState(board_won, RED_PLAYER, YELLOW_PLAYER)
+    mcts = MCTS(state=state)
+    mcts2 = MCTS(state=state2)
+
+    state2.print()
+    print(True if state.game_over() else False)
+    print(True if state2.game_over() else False)
+
+    print(state2.check_win())
+    print(state3.check_win())
+
 def main():
-    board = board_init(about_to_win_for_red)
+
+    board = board_init(example_board_string)
     test(board)
-    #run_multiple_simulations(board, 20)
+    #run_multiple_simulations(board, 100)
 
 
 if __name__ == "__main__":
