@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="70bbb04d-a8c5-4654-9338-4f9c4b8a19a6" name="Changes" comment="Merge with Algorithm2Gable" />
+    <list default="true" id="70bbb04d-a8c5-4654-9338-4f9c4b8a19a6" name="Changes" comment="Merge with Algorithm2Gable">
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -115,6 +117,7 @@
       <workItem from="1728842057058" duration="9048000" />
       <workItem from="1728924116240" duration="4545000" />
       <workItem from="1729013691705" duration="14640000" />
+      <workItem from="1729205271894" duration="122000" />
     </task>
     <task id="LOCAL-00001" summary="Readme added. &#10;Main method added. &#10;Utilities added.">
       <option name="closed" value="true" />
@@ -220,7 +223,15 @@
       <option name="project" value="LOCAL" />
       <updated>1729205232842</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Merge with Algorithm2Gable">
+      <option name="closed" value="true" />
+      <created>1729205330343</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1729205330343</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

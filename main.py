@@ -16,7 +16,7 @@ from utilities import board_init, print_board, OPEN_SPACE, RED_PLAYER, full_boar
     print_pretty_board, place_a_piece, example_board_string, COLUMNS, ROWS, about_to_win_for_red
 
 @dataclass
-class BoardState:
+class ConnectState:
     def __init__(self, board, player, other_player):
         """
         Class holds the state of the current board.
@@ -36,7 +36,6 @@ class BoardState:
         return [[OPEN_SPACE for _ in range(COLUMNS)] for _ in range(ROWS)]
 
     def move(self, col):
-        """Given a column, drops a piece into the game"""
         for row in range(len(self.board) - 1, -1, -1):
             if self.board[row][col] == OPEN_SPACE:
                 self.board[row][col] = self.player
@@ -50,9 +49,8 @@ class BoardState:
         """Return a list of columns with open spaces."""
         return [col for col in range(COLUMNS) if self.board[0][col] == OPEN_SPACE]
 
-    """Returns 1 for wins, -1 for lose and 0 for draws."""
+    #Return 1 for wins, -1 for lose and 0 for draw.
     def check_win(self):
-        """Checks if there is 4 in a row of a given piece"""
         board_array = np.array(self.board)
         for kernel in detection_kernels:
             if (convolve2d(board_array == self.player, kernel, mode="valid") == 4).any():
@@ -66,7 +64,6 @@ class BoardState:
     #Returns None for games not over
         #Problematic.
     def game_over(self):
-        """Returns true if someone won of if no more available moves."""
         return len(self.get_legal_moves()) == 0 or self.check_win()
 
     def print(self):
@@ -84,9 +81,8 @@ class Node:
     def add_children(self, children: dict) -> None:
         for child in children:
             self.children[child.move] = child
-
     #https://en.wikipedia.org/wiki/Monte_Carlo_tree_search#:~:text=c%20is%20the%20exploration%20parameter,in%20practice%20usually%20chosen%20empirically
-    def value(self, explore: math.sqrt(2)):
+    def value(self, explore: float = math.sqrt(2)):
         if self.N == 0:
             return 0 if explore == 0 else float('inf')
         else:
@@ -97,7 +93,7 @@ class MCTS:
         """
         Initialize MCTS with a state, or create a new state with the given board and players.
         Args:
-            state (BoardState): An optional game state to start from.
+            state (ConnectState): An optional game state to start from.
             board (2D array): An optional custom board. If not provided, the default board will be used.
             player (str): The player who starts, defaults to RED_PLAYER.
             other_player (str): The other player, defaults to YELLOW_PLAYER.
@@ -105,8 +101,8 @@ class MCTS:
         if state is None:
             if board is None:
                 # If no board is provided, generate a default board
-                board = BoardState.default_board()
-            state = BoardState(board, player, other_player)
+                board = ConnectState.default_board()
+            state = ConnectState(board, player, other_player)
         self.root_state = deepcopy(state)
         self.root = Node(None, None)
         self.run_time = 0
@@ -134,7 +130,7 @@ class MCTS:
 
         return node, state
 
-    def expand(self, parent: Node, state: BoardState) -> bool:
+    def expand(self, parent: Node, state: ConnectState) -> bool:
         if state.game_over():
             return False
 
@@ -143,7 +139,7 @@ class MCTS:
 
         return True
 
-    def roll_out(self, state: BoardState) -> int:
+    def roll_out(self, state: ConnectState) -> int:
         while not state.game_over():
             """
             TODO: 
@@ -203,13 +199,12 @@ class MCTS:
     def statistics(self) -> tuple:
         return self.num_rollouts, self.run_time
 
-
-def run_multiple_simulations(board, num_runs, time_per_simulation):
-    """Outputs a graph from most chosen move. """
+def run_multiple_simulations(board, num_runs):
     move_counts = {}
+    player = RED_PLAYER
 
     for _ in range(num_runs):
-        best_move = alg2(board, time_per_simulation)
+        best_move = alg2(board)
         if best_move in move_counts:
             move_counts[best_move] += 1
         else:
@@ -231,21 +226,17 @@ def alg1(board):
     if board_is_full(board): return -1
     return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
 
-def alg2(board, time_per_simulation, verbose = False):
-    """Returns the best move for a given board. """
-    # TODO:
-    #  Add verbose.
-
-    state = BoardState(board, RED_PLAYER, YELLOW_PLAYER)
+def alg2(board):
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
     mcts = MCTS(state=state)
 
     print("thinking")
-    mcts.search(time_per_simulation)
+    mcts.search(8)
     move = mcts.best_move()
 
     return move
 def test(board):
-    state = BoardState(board, RED_PLAYER, YELLOW_PLAYER)
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
     mcts = MCTS(state=state)
 
     state.print()
@@ -263,9 +254,9 @@ def test(board):
     state.print()
 
 def test2(board, board_won):
-    state = BoardState(board, RED_PLAYER, YELLOW_PLAYER)
-    state2 = BoardState(board_won, YELLOW_PLAYER, RED_PLAYER)
-    state3 = BoardState(board_won, RED_PLAYER, YELLOW_PLAYER)
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    state2 = ConnectState(board_won, YELLOW_PLAYER, RED_PLAYER)
+    state3 = ConnectState(board_won, RED_PLAYER, YELLOW_PLAYER)
     mcts = MCTS(state=state)
     mcts2 = MCTS(state=state2)
 
@@ -283,10 +274,7 @@ def main():
 
     board = board_init(about_to_win_for_red)
     test(board)
-
-    # Do not run method unless you want to generate graph of most picked move.
-    # It takes a long time.
-    #run_multiple_simulations(board, 100, 10)
+    #run_multiple_simulations(board, 100)
 
 
 if __name__ == "__main__":
