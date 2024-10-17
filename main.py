@@ -269,7 +269,10 @@ def test2(board, board_won):
 
 def main():
 
-    board = board_init(example_board_string)
+    #board = board_init(example_board_string)
+    #test(board)
+
+    board = board_init(about_to_win_for_red)
     test(board)
     #run_multiple_simulations(board, 100)
 
