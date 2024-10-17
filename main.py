@@ -93,7 +93,7 @@ class Node:
             return self.Q / self.N + explore * math.sqrt(math.log(self.parent.N) / self.N)
 
 class MCTS:
-    def __init__(self, state=None, board=None, player=RED_PLAYER, other_player=YELLOW_PLAYER):
+    def __init__(self, state=None, board=None, player=RED_PLAYER, other_player=YELLOW_PLAYER, verbose=False):
         """
         Initialize MCTS with a state, or create a new state with the given board and players.
         Args:
@@ -101,10 +101,11 @@ class MCTS:
             board (2D array): An optional custom board. If not provided, the default board will be used.
             player (str): The player who starts, defaults to RED_PLAYER.
             other_player (str): The other player, defaults to YELLOW_PLAYER.
+            verbose (bool): If true, prints detailed information during the search process.
         """
+        self.verbose = verbose
         if state is None:
             if board is None:
-                # If no board is provided, generate a default board
                 board = BoardState.default_board()
             state = BoardState(board, player, other_player)
         self.root_state = deepcopy(state)
@@ -131,6 +132,8 @@ class MCTS:
         if self.expand(node, state):
             node = random.choice(list(node.children.values()))
             state.move(node.move)
+            if self.verbose:
+                print("NODE ADDED")
 
         return node, state
 
@@ -144,28 +147,29 @@ class MCTS:
         return True
 
     def roll_out(self, state: BoardState) -> int:
+        if self.verbose:
+            print("Rollout moves:")
         while not state.game_over():
-            """
-            TODO: 
-                This should be replaced with alg1 method. 
-            """
-            state.move(random.choice(state.get_legal_moves()))
+            move = random.choice(state.get_legal_moves())
+            state.move(move)
+            if self.verbose:
+                print(f"Move selected: {move}")
 
-        return state.check_win()
+        outcome = state.check_win()
+        if self.verbose:
+            print(f"TERMINAL NODE VALUE: {outcome}")
+        return outcome
 
     def back_propagate(self, node: Node, turn: int, outcome: int) -> None:
-
-        # For the current player, not the next player
         reward = 0 if outcome == turn else 1
 
         while node is not None:
             node.N += 1
             node.Q += reward
+            if self.verbose:
+                print(f"Updated values:\nwi: {node.Q}\nni: {node.N}")
             node = node.parent
-            if outcome == 0:
-                reward = 0
-            else:
-                reward = 1 - reward
+            reward = 0 if outcome == 0 else 1 - reward
 
     def search(self, time_limit: int):
         start_time = time.process_time()
