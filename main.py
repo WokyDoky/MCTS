@@ -103,7 +103,7 @@ class Node:
         Exploration is used to increase knowledge about an environment or model.
         Explore new ideas. 
         
-    C constant, in this case sqrt(2), decides the ration between exploration and exploitation. 
+    C constant, in this case sqrt(2), decides the ratio between exploration and exploitation. 
     """
 
 class MCTS:

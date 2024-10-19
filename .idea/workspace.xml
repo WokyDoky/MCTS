@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="70bbb04d-a8c5-4654-9338-4f9c4b8a19a6" name="Changes" comment="Added verbose">
+    <list default="true" id="70bbb04d-a8c5-4654-9338-4f9c4b8a19a6" name="Changes" comment="Added comments">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -121,7 +121,7 @@
       <workItem from="1729205271894" duration="418000" />
       <workItem from="1729218787536" duration="1926000" />
       <workItem from="1729297947522" duration="3137000" />
-      <workItem from="1729309215057" duration="1715000" />
+      <workItem from="1729309215057" duration="1735000" />
     </task>
     <task id="LOCAL-00001" summary="Readme added. &#10;Main method added. &#10;Utilities added.">
       <option name="closed" value="true" />
@@ -259,7 +259,15 @@
       <option name="project" value="LOCAL" />
       <updated>1729309662389</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Added comments">
+      <option name="closed" value="true" />
+      <created>1729310955041</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1729310955041</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -288,7 +296,8 @@
     <MESSAGE value="Verbose not working" />
     <MESSAGE value="Merge with Algorithm2Gable" />
     <MESSAGE value="Added verbose" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added verbose" />
+    <MESSAGE value="Added comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added comments" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/MCTS$main.coverage" NAME="main Coverage Results" MODIFIED="1729301160737" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
