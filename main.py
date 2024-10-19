@@ -234,14 +234,17 @@ def alg1(board):
 
 def alg2(board, time_per_simulation, option_to_print):
     """
-    Heuristic driven search algorithm that combines the classic tree search implementations
-     alongside machine learning principles of reinforcement learning.
+    Heuristic driven search algorithm.
+    For each position, all feasible moves are determined:
+        k random games are played out to the very end, and the scores are recorded.
+        The move leading to the best score is chosen.
 
     board(2D Array): Representation of the board in a 2D string array
                         if no board given, it is generated with all 0's.
-    option_to_print(int 0..2):  0 -> No printing other than the best move
-                                1 -> Brief printing.
-                                2 -> Verbose.
+    option_to_print(int 0..2):
+        0 -> No printing other than the best move
+        1 -> Brief printing.
+        2 -> Verbose.
     """
     verbose = True if option_to_print > 1 else False
     state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
