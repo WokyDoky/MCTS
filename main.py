@@ -85,12 +85,26 @@ class Node:
     def add_children(self, children: dict) -> None:
         for child in children:
             self.children[child.move] = child
+
     #https://en.wikipedia.org/wiki/Monte_Carlo_tree_search#:~:text=c%20is%20the%20exploration%20parameter,in%20practice%20usually%20chosen%20empirically
     def value(self, explore: float = math.sqrt(2)):
         if self.N == 0:
             return 0 if explore == 0 else float('inf')
         else:
             return self.Q / self.N + explore * math.sqrt(math.log(self.parent.N) / self.N)
+
+    """
+    Exploitation: 
+       a strategy of using the accumulated knowledge to make decisions that maximize 
+       the expected reward based on the present information.
+       In other words, if you now it works, keep doing it. 
+    
+    Exploration: 
+        Exploration is used to increase knowledge about an environment or model.
+        Explore new ideas. 
+        
+    C constant, in this case sqrt(2), decides the ration between exploration and exploitation. 
+    """
 
 class MCTS:
     def __init__(self, state=None, board=None, player=RED_PLAYER, other_player=YELLOW_PLAYER, verbose=False):
