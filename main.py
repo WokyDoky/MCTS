@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import time
+
+from PyQt5.pyrcc_main import verbose
 from matplotlib import pyplot as plt
 from collections import defaultdict
 from scipy.signal import convolve2d
@@ -69,6 +71,8 @@ class ConnectState:
     def print(self):
         print_pretty_board(self.board)
 
+    def ugly_print(self):
+        print_board(self.board)
 class Node:
     def __init__(self, move, parent):
         self.move = move
@@ -89,7 +93,7 @@ class Node:
             return self.Q / self.N + explore * math.sqrt(math.log(self.parent.N) / self.N)
 
 class MCTS:
-    def __init__(self, state=None, board=None, player=RED_PLAYER, other_player=YELLOW_PLAYER):
+    def __init__(self, state=None, board=None, player=RED_PLAYER, other_player=YELLOW_PLAYER, verbose=False):
         """
         Initialize MCTS with a state, or create a new state with the given board and players.
         Args:
@@ -97,6 +101,7 @@ class MCTS:
             board (2D array): An optional custom board. If not provided, the default board will be used.
             player (str): The player who starts, defaults to RED_PLAYER.
             other_player (str): The other player, defaults to YELLOW_PLAYER.
+            verbose (bool): Prints extra information.
         """
         if state is None:
             if board is None:
@@ -108,6 +113,7 @@ class MCTS:
         self.run_time = 0
         self.node_count = 0
         self.num_rollouts = 0
+        self.verbose = verbose
 
     def select_node(self) -> tuple:
         node = self.root
@@ -127,6 +133,7 @@ class MCTS:
         if self.expand(node, state):
             node = random.choice(list(node.children.values()))
             state.move(node.move)
+            if self.verbose: print("NODE ADDED")
 
         return node, state
 
@@ -141,12 +148,10 @@ class MCTS:
 
     def roll_out(self, state: ConnectState) -> int:
         while not state.game_over():
-            """
-            TODO: 
-                This should be replaced with alg1 method. 
-            """
-            state.move(random.choice(state.get_legal_moves()))
-
+            move = random.choice(state.get_legal_moves())
+            state.move(move)
+            if self.verbose: print(f"Move selected: {move}")
+        if self.verbose: print(f"TERMINAL NODE VALUE: {state.check_win()}")
         return state.check_win()
 
     def back_propagate(self, node: Node, turn: int, outcome: int) -> None:
@@ -157,6 +162,7 @@ class MCTS:
         while node is not None:
             node.N += 1
             node.Q += reward
+            if self.verbose: print(f"Updated values:\nwi: {node.Q}\nni: {node.N}")
             node = node.parent
             if outcome == 0:
                 reward = 0
@@ -226,46 +232,62 @@ def alg1(board):
     if board_is_full(board): return -1
     return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
 
-def alg2(board):
-    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
-    mcts = MCTS(state=state)
+def alg2(board, time_per_simulation, option_to_print):
+    """
+    Heuristic driven search algorithm that combines the classic tree search implementations
+     alongside machine learning principles of reinforcement learning.
 
-    print("thinking")
-    mcts.search(8)
-    move = mcts.best_move()
+    board(2D Array): Representation of the board in a 2D string array
+                        if no board given, it is generated with all 0's.
+    option_to_print(int 0..2):  0 -> No printing other than the best move
+                                1 -> Brief printing.
+                                2 -> Verbose.
+    """
+    verbose = True if option_to_print > 1 else False
+    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    mcts = MCTS(state=state, verbose=verbose)
+
+    if option_to_print == 0:
+        print("...")
+        mcts.search(time_per_simulation)
+        move = mcts.best_move()
+        print("MCTS chose move: ", move)
+    elif option_to_print == 1:
+        print("Thinking...")
+        mcts.search(time_per_simulation)
+        move = mcts.best_move()
+        num_rollouts, run_time = mcts.statistics()
+        print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
+        state.move(move)
+        state.ugly_print()
+        print("MCTS chose move: ", move)
+    else:
+        state.print()
+        print("Thinking...")
+        mcts.search(time_per_simulation)
+        move = mcts.best_move()
+        num_rollouts, run_time = mcts.statistics()
+        print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
+        state.move(move)
+        state.print()
+        print("MCTS chose move: ", move)
 
     return move
-def test(board):
+def test(board, verbose):
     state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
-    mcts = MCTS(state=state)
+    mcts = MCTS(state=state, verbose=verbose)
 
-    state.print()
+    if verbose: state.print()
 
     print("thinking")
-    mcts.search(8)
+    mcts.search(1)
     num_rollouts, run_time = mcts.statistics()
-    print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
+    if verbose: print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
     move = mcts.best_move()
 
     print("MCTS chose move: ", move)
 
-    state.move(move)
-    mcts.move(move)
-    state.print()
 
-def test2(board, board_won):
-    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
-    state2 = ConnectState(board_won, YELLOW_PLAYER, RED_PLAYER)
-    state3 = ConnectState(board_won, RED_PLAYER, YELLOW_PLAYER)
-    mcts = MCTS(state=state)
-    mcts2 = MCTS(state=state2)
-
-    state2.print()
-    print(True if state.game_over() else False)
-    print(True if state2.game_over() else False)
-
-    print(state2.check_win())
-    print(state3.check_win())
 
 def main():
 
@@ -273,7 +295,7 @@ def main():
     #test(board)
 
     board = board_init(about_to_win_for_red)
-    test(board)
+    alg2(board, 1, 2)
     #run_multiple_simulations(board, 100)
 
 
