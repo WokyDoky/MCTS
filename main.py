@@ -219,12 +219,27 @@ class MCTS:
     def statistics(self) -> tuple:
         return self.num_rollouts, self.run_time
 
-def run_multiple_simulations(board, num_runs):
+def run_multiple_simulations(board, num_runs, num_simulations):
+    """
+        Simulates multiple games of Connect Four to determine the frequency of the best move.
+
+        Args:
+            board (2D list): The current state of the game board, represented as a 2D list where each element is either OPEN_SPACE, RED_PLAYER, or a YELLOW_PLAYER.
+            num_runs (int): The number of simulations to run.
+            num_simulations (int): The number of simulations to run.
+
+        Returns:
+            None: The function displays a bar chart of the frequency of the best move selection for each column over the course of the simulations.
+
+        Behavior:
+            - For each simulation, the best move is calculated using the `alg2` function.
+            - The frequency of each move being selected as the best is tracked in the `move_counts` dictionary.
+            - A bar chart is generated and displayed showing how often each move (column index) was selected as the best move across all simulations.
+    """
     move_counts = {}
-    player = RED_PLAYER
 
     for _ in range(num_runs):
-        best_move = alg2(board)
+        best_move = alg2(board, num_simulations, 0)
         if best_move in move_counts:
             move_counts[best_move] += 1
         else:
@@ -234,12 +249,14 @@ def run_multiple_simulations(board, num_runs):
     moves = list(move_counts.keys())
     counts = list(move_counts.values())
 
+    letter_moves = [chr(ord('A') + move) for move in moves]
+
     plt.figure(figsize=(10, 6))
-    plt.bar(moves, counts, color='blue')
-    plt.xlabel('Move (Column Index)')
+    plt.bar(letter_moves, counts, color='blue')
+    plt.xlabel('Move (Column)')  # Update label to reflect letters
     plt.ylabel('Frequency of Selection')
     plt.title(f'Frequency of Best Move Selection in {num_runs} Simulations')
-    plt.xticks(moves)
+    plt.xticks(letter_moves)  # Use letter_moves for x-axis ticks
     plt.show()
 
 def alg1(board):
@@ -307,13 +324,22 @@ def test(board, verbose):
 
 
 def main():
+    #TODO:
+    # Add parameters to the command line after file call in.
+    # Example: python	test1.txt	Verbose 0
 
-    #board = board_init(example_board_string)
-    #test(board)
+    """
+    El profe quiere que uno de los parametros sea numero de iteraciones cuando lo corres
+       Yo lo tengo por tiempo por que no sabia cual seria un buen numero de iteraciones pero lo pueden cambiar.
 
-    board = board_init(about_to_win_for_red)
-    alg2(board, 1, 2)
-    #run_multiple_simulations(board, 100)
+        Para referencia, ~10 segundos de este algorimo son como ~80k iteraciones en mi laptop.
+    """
+
+    board = board_init(example_board_string)
+    #alg2(board, 1, 2)
+
+    #Will output a graph.
+    run_multiple_simulations(board, 5, 1)
 
 
 if __name__ == "__main__":
