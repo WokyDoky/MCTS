@@ -51,8 +51,9 @@ class ConnectState:
         """Return a list of columns with open spaces."""
         return [col for col in range(COLUMNS) if self.board[0][col] == OPEN_SPACE]
 
-    #Return 1 for wins, -1 for lose and 0 for draw.
+
     def check_win(self):
+        """Return 1 for wins, -1 for lose and 0 for draw."""
         board_array = np.array(self.board)
         for kernel in detection_kernels:
             if (convolve2d(board_array == self.player, kernel, mode="valid") == 4).any():
