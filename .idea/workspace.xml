@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70bbb04d-a8c5-4654-9338-4f9c4b8a19a6" name="Changes" comment="Added comments">
+      <change beforePath="$PROJECT_DIR$/.idea/MCTS.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/MCTS.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -121,7 +122,8 @@
       <workItem from="1729205271894" duration="418000" />
       <workItem from="1729218787536" duration="1926000" />
       <workItem from="1729297947522" duration="3137000" />
-      <workItem from="1729309215057" duration="3074000" />
+      <workItem from="1729309215057" duration="3093000" />
+      <workItem from="1729462959510" duration="134000" />
     </task>
     <task id="LOCAL-00001" summary="Readme added. &#10;Main method added. &#10;Utilities added.">
       <option name="closed" value="true" />
@@ -283,7 +285,15 @@
       <option name="project" value="LOCAL" />
       <updated>1729312206147</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="Added comments">
+      <option name="closed" value="true" />
+      <created>1729312320758</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1729312320758</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -1,5 +1,6 @@
 import random
 import math
+import sys
 from copyreg import constructor
 from dataclasses import dataclass
 
@@ -324,24 +325,17 @@ def test(board, verbose):
 
 
 
-def main():
-    #TODO:
-    # Add parameters to the command line after file call in.
-    # Example: python	test1.txt	Verbose 0
+def main(input_file, verbosity, simulations):
 
-    """
-    El profe quiere que uno de los parametros sea numero de iteraciones cuando lo corres
-       Yo lo tengo por tiempo por que no sabia cual seria un buen numero de iteraciones pero lo pueden cambiar.
-
-        Para referencia, ~10 segundos de este algorimo son como ~80k iteraciones en mi laptop.
-    """
-
-    board = board_init(example_board_string)
-    #alg2(board, 1, 2)
+    board = board_init(input_file)
+    alg2(board, simulations, verbosity)
 
     #Will output a graph.
     run_multiple_simulations(board, 5, 1)
 
 
 if __name__ == "__main__":
-    main()
+    input_file = sys.argv[1]
+    verbosity = sys.argv[2]
+    simulations = int(sys.argv[3])
+    main(input_file, verbosity, simulations)
