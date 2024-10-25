@@ -2,9 +2,10 @@ import os
 import random
 import math
 import sys
-from dataclasses import dataclass
 import time
 
+from dataclasses import dataclass
+from tqdm import tqdm
 from matplotlib import pyplot as plt
 from copy import deepcopy
 
@@ -80,7 +81,7 @@ class Utilities:
             print(x, " |", end="")
             for y in range(len(board[x])):
                 if (board[x][y] == "Y"):
-                    print("", "🔵", end=" |")
+                    print("", "🟡", end=" |")
                 elif (board[x][y] == "R"):
                     print("", "🔴", end=" |")
                 else:
@@ -272,6 +273,40 @@ class MCTS:
         self.run_time = run_time
         self.num_rollouts = num_rollouts
 
+    def select_node_for_pure_monte_carlo(self) -> tuple:
+        node = self.root
+        state = deepcopy(self.root_state)
+
+        while len(node.children) != 0:
+            # Pick a random child node
+            node = random.choice(list(node.children.values()))
+            state.move(node.move)
+
+            if node.N == 0:
+                return node, state
+
+        # Expand the current node if it has no children and pick a random child
+        if self.expand(node, state):
+            node = random.choice(list(node.children.values()))
+            state.move(node.move)
+            if self.verbose:
+                print("NODE ADDED")
+
+        return node, state
+
+    def search_pure_monte_carlo(self, num_simulations: int):
+        start_time = time.process_time()
+
+        num_rollouts = 0
+        while num_rollouts < num_simulations:
+            node, state = self.select_node_for_pure_monte_carlo()
+            outcome = self.roll_out(state)
+            self.back_propagate(node, state.player, outcome)
+            num_rollouts += 1
+
+        run_time = time.process_time() - start_time
+        self.run_time = run_time
+        self.num_rollouts = num_rollouts
     def best_move(self):
         if self.root_state.game_over():
             return -1
@@ -294,13 +329,13 @@ class MCTS:
     def statistics(self) -> tuple:
         return self.num_rollouts, self.run_time
 
-def run_multiple_simulations(board, num_runs, num_simulations):
+def run_multiple_simulations(board, player, num_runs, num_simulations):
     """
         Simulates multiple games of Connect Four to determine the frequency of the best move.
 
         Args:
             board (2D list): The current state of the game board, represented as a 2D list where each element is either OPEN_SPACE, RED_PLAYER, or a YELLOW_PLAYER.
-            num_runs (int): The number of simulations to run.
+            num_runs (int): The number of run of simulations.
             num_simulations (int): The number of simulations to run.
 
         Returns:
@@ -313,8 +348,8 @@ def run_multiple_simulations(board, num_runs, num_simulations):
     """
     move_counts = {}
 
-    for _ in range(num_runs):
-        best_move = alg2(board, num_simulations, 0)
+    for _ in tqdm(range(num_runs), desc="Loading..."):
+        best_move = generic_alg(board, player, num_simulations, 0, use_pure_monte_carlo=False)
         if best_move in move_counts:
             move_counts[best_move] += 1
         else:
@@ -338,50 +373,57 @@ def alg1(board):
     if Utilities.board_is_full(board): raise Exception ("Board is full.")
     return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
 
-def alg2(board, num_simulations, option_to_print):
-    """
+"""
     Heuristic driven search algorithm.
     For each position, all feasible moves are determined:
         k random games are played out to the very end, and the scores are recorded.
         The move leading to the best score is chosen.
-
+"""
+def generic_alg(board, player, num_simulations, option_to_print, use_pure_monte_carlo=False):
+    """
     board(2D Array): Representation of the board in a 2D string array
-                        if no board given, it is generated with all 0's.
+                        if no board is given, it is generated with all 0's.
     option_to_print(int 0..2):
         0 -> No printing other than the best move
         1 -> Brief printing.
         2 -> Verbose.
+    use_pure_monte_carlo (bool): If True, calls search_pure_monte_carlo; otherwise, calls search.
     """
-    verbose = True if option_to_print > 1 else False
-    state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    verbose = option_to_print > 1
+    if player == 'R': state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
+    else: state = ConnectState(board, YELLOW_PLAYER, RED_PLAYER)
     mcts = MCTS(state=state, verbose=verbose)
+
+    search_method = mcts.search_pure_monte_carlo if use_pure_monte_carlo else mcts.search
 
     if option_to_print == 0:
         print("...")
-        mcts.search(num_simulations)
+        search_method(num_simulations)
         move = mcts.best_move()
-        print("MCTS chose move: ", move)
+        print("MCTS chose move:", move)
     elif option_to_print == 1:
         print("Thinking...")
-        mcts.search(num_simulations)
+        search_method(num_simulations)
         move = mcts.best_move()
         num_rollouts, run_time = mcts.statistics()
-        print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
+        print("Statistics:", num_rollouts, "rollouts in", run_time, "seconds")
         state.move(move)
         state.ugly_print()
-        print("MCTS chose move: ", move)
+        print("MCTS chose move:", move)
     else:
         state.print()
         print("Thinking...")
-        mcts.search(num_simulations)
+        search_method(num_simulations)
         move = mcts.best_move()
         num_rollouts, run_time = mcts.statistics()
-        print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
+        print("Statistics:", num_rollouts, "rollouts in", run_time, "seconds")
         state.move(move)
         state.print()
-        print("MCTS chose move: ", move)
+        print("MCTS chose move:", move)
 
     return move
+
+
 def test(board, verbose):
     state = ConnectState(board, RED_PLAYER, YELLOW_PLAYER)
     mcts = MCTS(state=state, verbose=verbose)
@@ -425,9 +467,11 @@ def main(input_file, verbosity, simulations):
         print(f"FINAL	Move	selected:{alg1(board)}")
         if option_to_print > 1: Utilities.print_board(board)
     elif algorithm == "PMCGS":
-        alg2(board, simulations, option_to_print)
+        generic_alg(board, player, simulations, option_to_print, use_pure_monte_carlo=True)
     elif algorithm == "UCT":
-        alg2(board, simulations, option_to_print)
+        generic_alg(board, player, simulations, option_to_print, use_pure_monte_carlo=False)
+
+    #run_multiple_simulations(board, player, 100, 5_000)
 
 
 
