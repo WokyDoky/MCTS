@@ -1,22 +1,95 @@
+import os
 import random
 import math
 import sys
-from copyreg import constructor
 from dataclasses import dataclass
-
-import numpy as np
 import time
 
-from PyQt5.pyrcc_main import verbose
 from matplotlib import pyplot as plt
-from collections import defaultdict
-from scipy.signal import convolve2d
 from copy import deepcopy
 
-import utilities
-from utilities import board_init, print_board, OPEN_SPACE, RED_PLAYER, full_board_string, detection_kernels, \
-    YELLOW_PLAYER, won_board_by_red, board_is_full, did_player_win, test_board_yellow, print_pretty_board, deep_copy, \
-    print_pretty_board, place_a_piece, example_board_string, COLUMNS, ROWS, about_to_win_for_red
+import numpy as np
+from scipy.signal import convolve2d
+RED_PLAYER = 'R'
+YELLOW_PLAYER = 'Y'
+OPEN_SPACE = 'O'
+
+ROWS = 6
+COLUMNS = 7
+horizontal_kernel = np.array([[1, 1, 1, 1]])
+vertical_kernel = np.transpose(horizontal_kernel)
+diag1_kernel = np.eye(4, dtype=np.uint8)
+diag2_kernel = np.fliplr(diag1_kernel)
+detection_kernels = [horizontal_kernel, vertical_kernel, diag1_kernel, diag2_kernel]
+class Utilities:
+
+    @staticmethod
+    def board_init(string_board):
+        rows = string_board.strip().split("\n")
+        board = [list(row) for row in rows]
+        return board
+
+    @staticmethod
+    def print_board(board):
+        print(end='  ')
+        for i in range(COLUMNS):  # Access class variables using `Utilities.`
+            print(i, end=' ')
+        print()
+        i = 0
+        for row in board:
+            print(i, end=' ')
+            print(" ".join(row))
+            i += 1
+        print("\n")
+
+    @staticmethod
+    def did_player_win(board, player):
+        """Returns +1 if player wins, -1 otherwise."""
+        board_array = np.array(board)
+        for kernel in detection_kernels:  # Access class variables via `Utilities.`
+            if (convolve2d(board_array == player, kernel, mode="valid") == 4).any():
+                return 1
+        return -1
+
+    @staticmethod
+    def board_is_full(board):
+        return not (OPEN_SPACE in (item for sublist in board for item in sublist))
+
+    """
+        Inserts a piece into the Connect 4 board in the given column.
+
+        :param board: 2D list representing the Connect 4 board (rows x columns).
+        :param column: The column index where the player wants to drop their piece.
+        :param piece: The player's piece ('X' or 'O', for example).
+        :return: True if the piece was successfully inserted, False if the column is full.
+    """
+    @staticmethod
+    def place_a_piece(board, column, player):
+        rows = len(board)
+        for row in reversed(range(rows)):
+            if board[row][column] == OPEN_SPACE:
+                board[row][column] = player
+                return True
+        return False
+
+    @staticmethod
+    def print_pretty_board(board):
+        print("\n     A    B    C    D    E    F    G  ", end="")
+        for x in range(len(board)):
+            print("\n   +----+----+----+----+----+----+----+")
+            print(x, " |", end="")
+            for y in range(len(board[x])):
+                if (board[x][y] == "Y"):
+                    print("", "🔵", end=" |")
+                elif (board[x][y] == "R"):
+                    print("", "🔴", end=" |")
+                else:
+                    print("", "⚪", end="  |")
+        print("\n   +----+----+----+----+----+----+----+")
+
+    @staticmethod
+    def deep_copy(board):
+        return [[i for i in row] for row in board]
 
 @dataclass
 class ConnectState:
@@ -61,7 +134,7 @@ class ConnectState:
                 return 1
             if (convolve2d(board_array == self.other_player, kernel, mode="valid") == 4).any():
                 return -1
-        if board_is_full(self.board):
+        if Utilities.board_is_full(self.board):
             return 0
         return None
 
@@ -71,10 +144,10 @@ class ConnectState:
         return len(self.get_legal_moves()) == 0 or self.check_win()
 
     def print(self):
-        print_pretty_board(self.board)
+        Utilities.print_pretty_board(self.board)
 
     def ugly_print(self):
-        print_board(self.board)
+        Utilities.print_board(self.board)
 class Node:
     def __init__(self, move, parent):
         self.move = move
@@ -185,11 +258,11 @@ class MCTS:
             else:
                 reward = 1 - reward
 
-    def search(self, time_limit: int):
+    def search(self, num_simulations: int):
         start_time = time.process_time()
 
         num_rollouts = 0
-        while time.process_time() - start_time < time_limit:
+        while num_rollouts < num_simulations:
             node, state = self.select_node()
             outcome = self.roll_out(state)
             self.back_propagate(node, state.player, outcome)
@@ -262,10 +335,10 @@ def run_multiple_simulations(board, num_runs, num_simulations):
     plt.show()
 
 def alg1(board):
-    if board_is_full(board): return -1
+    if Utilities.board_is_full(board): raise Exception ("Board is full.")
     return random.choice([col for col in range(len(board[0])) if board[0][col] == OPEN_SPACE])
 
-def alg2(board, time_per_simulation, option_to_print):
+def alg2(board, num_simulations, option_to_print):
     """
     Heuristic driven search algorithm.
     For each position, all feasible moves are determined:
@@ -285,12 +358,12 @@ def alg2(board, time_per_simulation, option_to_print):
 
     if option_to_print == 0:
         print("...")
-        mcts.search(time_per_simulation)
+        mcts.search(num_simulations)
         move = mcts.best_move()
         print("MCTS chose move: ", move)
     elif option_to_print == 1:
         print("Thinking...")
-        mcts.search(time_per_simulation)
+        mcts.search(num_simulations)
         move = mcts.best_move()
         num_rollouts, run_time = mcts.statistics()
         print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
@@ -300,7 +373,7 @@ def alg2(board, time_per_simulation, option_to_print):
     else:
         state.print()
         print("Thinking...")
-        mcts.search(time_per_simulation)
+        mcts.search(num_simulations)
         move = mcts.best_move()
         num_rollouts, run_time = mcts.statistics()
         print("Statistics: ", num_rollouts, "rollouts in", run_time, "seconds")
@@ -324,14 +397,38 @@ def test(board, verbose):
     print("MCTS chose move: ", move)
 
 
+"""
+========================================================
+==========================MAIN==========================
+========================================================
+"""
 
 def main(input_file, verbosity, simulations):
+    if not os.path.exists(input_file):
+        raise Exception(f"Error: File '{input_file}' does not exist.")
 
-    board = board_init(input_file)
-    alg2(board, simulations, verbosity)
+    with open(input_file, 'r') as f:
+        algorithm = f.readline().strip()
+        player = f.readline().strip()
+        board = [list(f.readline().strip()) for _ in range(ROWS)]
 
-    #Will output a graph.
-    run_multiple_simulations(board, 5, 1)
+    if verbosity == "None":
+        option_to_print = 0
+    elif verbosity == "Brief":
+        option_to_print = 1
+    elif verbosity == "Verbose":
+        option_to_print = 2
+    else:
+        raise Exception("typo")
+
+    if algorithm == "UR":
+        print(f"FINAL	Move	selected:{alg1(board)}")
+        if option_to_print > 1: Utilities.print_board(board)
+    elif algorithm == "PMCGS":
+        alg2(board, simulations, option_to_print)
+    elif algorithm == "UCT":
+        alg2(board, simulations, option_to_print)
+
 
 
 if __name__ == "__main__":
