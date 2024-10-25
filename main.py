@@ -272,6 +272,7 @@ class MCTS:
         run_time = time.process_time() - start_time
         self.run_time = run_time
         self.num_rollouts = num_rollouts
+        self.column_print()
 
     def select_node_for_pure_monte_carlo(self) -> tuple:
         node = self.root
@@ -307,6 +308,7 @@ class MCTS:
         run_time = time.process_time() - start_time
         self.run_time = run_time
         self.num_rollouts = num_rollouts
+        self.column_print()
     def best_move(self):
         if self.root_state.game_over():
             return -1
@@ -325,6 +327,11 @@ class MCTS:
 
         self.root_state.move(move)
         self.root = Node(None, None)
+
+    def column_print(self):
+        for i, child in enumerate(self.root.children.values()):
+            if child.N == 0: print (f"Column {i}: Null")
+            else: print(f"Column {i}: {child.Q / child.N}")
 
     def statistics(self) -> tuple:
         return self.num_rollouts, self.run_time
